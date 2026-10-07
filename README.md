@@ -145,7 +145,7 @@ The current Unity project uses the following external components:
 - Unity Gaussian Splatting package:
   <https://github.com/aras-p/UnityGaussianSplatting>
 - PromptSplat-generated scene assets and the PromptSplat implementation
-  documentation in [`PROJECT_IMPLEMENTATION.md`](./PROJECT_IMPLEMENTATION.md).
+  documentation in [`docs/prompt-splat.md`](./docs/prompt-splat.md).
 - Human model and walking animation obtained from
   [Mixamo](https://www.mixamo.com/).
 - Car model obtained from [Sketchfab](https://sketchfab.com/).
