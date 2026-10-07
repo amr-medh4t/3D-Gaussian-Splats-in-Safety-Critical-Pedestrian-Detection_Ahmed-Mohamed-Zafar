@@ -98,13 +98,12 @@ PromptSplat implementation used.
 
 **Outputs**
 
-- RGB images captured from the vehicle camera.
-- Scene/configuration metadata needed to reproduce each capture.
-- A dataset to be annotated for pedestrian detection.
+- A configured Unity environment ready for vehicle-camera capture.
+- Scene/configuration metadata needed by the dataset contributor.
+- An initial visual sample of the environment and pedestrian.
 
-### Capture protocol
-
-**To be completed by the Unity contributor before final submission:**
+Dataset image capture is outside the scope of this Unity environment
+contribution. The dataset contributor should complete the following section:
 
 - [ ] Camera resolution, field of view, and frame rate.
 - [ ] Image capture key, script, or command.
@@ -184,7 +183,7 @@ Current Unity contribution:
 - Environment construction and Gaussian-splat import.
 - Human model integration and pedestrian path behavior.
 - Car integration and controllable movement.
-- Initial Unity project organization for reproducible scene capture.
+- Initial Unity project organization for reproducible scene setup.
 
 **To be completed by the team:** add each member’s name, GitHub account,
 technical contribution, and the commits or subsystem associated with that
@@ -192,7 +191,8 @@ contribution.
 
 ## Known limitations of this stage
 
-- The full capture protocol is not yet documented here.
+- The dataset capture protocol is intentionally left for the dataset
+  contributor.
 - Dataset annotations and detector results are not part of this Unity-only
   stage.
 - The Gaussian-splat package is retrieved from an external Git repository.
