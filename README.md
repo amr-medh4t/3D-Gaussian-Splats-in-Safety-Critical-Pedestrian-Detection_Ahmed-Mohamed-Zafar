@@ -37,6 +37,9 @@ The Unity project intentionally does not include generated folders such as
 `Library/`, `Logs/`, `UserSettings/`, or build outputs. Unity regenerates these
 when the project is opened.
 
+Detailed Unity setup and handoff notes are in
+[`docs/unity-setup.md`](./docs/unity-setup.md).
+
 ## Unity contribution
 
 ### Implemented in this stage
