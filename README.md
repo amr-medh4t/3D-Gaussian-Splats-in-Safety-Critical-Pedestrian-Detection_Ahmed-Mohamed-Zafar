@@ -153,9 +153,9 @@ the exact Mixamo asset attribution and Sketchfab asset attribution below:
 
 | Asset | Source URL | Creator | License/terms | Redistribution status |
 | --- | --- | --- | --- | --- |
-| Human model | _To be added_ | _To be added_ | Mixamo terms to be checked | _To be checked_ |
-| Walking animation | _To be added_ | _To be added_ | Mixamo terms to be checked | _To be checked_ |
-| Car model | _To be added_ | _To be added_ | Sketchfab license to be checked | _To be checked_ |
+| Human model | [Mixamo free library](https://www.mixamo.com/) | Adobe Mixamo | Mixamo terms to be checked | _To be checked_ |
+| Walking animation | [Mixamo free library](https://www.mixamo.com/) | Adobe Mixamo | Mixamo terms to be checked | _To be checked_ |
+| Car model | [Car for Games Unity](https://sketchfab.com/3d-models/car-for-games-unity-4d9bbde680fe41349d7ad2b4672a720b) | _Creator listed on Sketchfab page_ | Sketchfab license to be checked | _To be checked_ |
 
 If an asset license does not permit redistribution, remove the binary from the
 repository and document how evaluators can obtain it legally.
