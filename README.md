@@ -112,7 +112,8 @@ PromptSplat implementation used.
 - [ ] Pedestrian route, speed range, and starting pose.
 - [ ] Lighting/environment variations.
 - [ ] File naming convention and metadata format.
-- [ ] Example captured frames in `docs/samples/`.
+- [x] Initial Unity environment sample in
+      [`docs/samples/unity-environment-pedestrian.png`](./docs/samples/unity-environment-pedestrian.png).
 
 ## Dataset and evaluation
 
