@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33b71fae31e6c7d438e8566dc713e666, type: 3}
+  m_Name: sidewalk_splat
+  m_EditorClassIdentifier: GaussianSplatting::GaussianSplatting.Runtime.GaussianSplatAsset
+  m_FormatVersion: 20231020
+  m_SplatCount: 99999
+  m_BoundsMin: {x: -0.75, y: 0, z: -2}
+  m_BoundsMax: {x: 0.75, y: 0.05, z: 2}
+  m_DataHash:
+    serializedVersion: 2
+    Hash: a79528f0c752ca4a8bd8bbd9d01e0c1c
+  m_PosFormat: 0
+  m_ScaleFormat: 0
+  m_SHFormat: 0
+  m_ColorFormat: 0
+  m_PosData: {fileID: 4900000, guid: 8e16089d19b6f784492de261fd6e3db8, type: 3}
+  m_ColorData: {fileID: 4900000, guid: 0ad9ff063f1cf2b45a03e60a9ffc4dff, type: 3}
+  m_OtherData: {fileID: 4900000, guid: 7f0a6a4b64eb8454d835d2fea8c78341, type: 3}
+  m_SHData: {fileID: 4900000, guid: e176e16f64d34384f851511ddb8a39d4, type: 3}
+  m_ChunkData: {fileID: 0}
+  m_Cameras: []

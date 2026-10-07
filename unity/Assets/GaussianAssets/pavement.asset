@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33b71fae31e6c7d438e8566dc713e666, type: 3}
+  m_Name: pavement
+  m_EditorClassIdentifier: GaussianSplatting::GaussianSplatting.Runtime.GaussianSplatAsset
+  m_FormatVersion: 20231020
+  m_SplatCount: 99999
+  m_BoundsMin: {x: -6.000001, y: -0.000000011628323, z: -6.0000014}
+  m_BoundsMax: {x: 6.0000014, y: 0.10000002, z: 6.0000014}
+  m_DataHash:
+    serializedVersion: 2
+    Hash: 7a4b06858aecca13e8dda1245bfdb322
+  m_PosFormat: 0
+  m_ScaleFormat: 0
+  m_SHFormat: 0
+  m_ColorFormat: 0
+  m_PosData: {fileID: 4900000, guid: 8dd1e074a32612e409d7479b9817029c, type: 3}
+  m_ColorData: {fileID: 4900000, guid: 547fec3be611d26408a2da9f811cb2db, type: 3}
+  m_OtherData: {fileID: 4900000, guid: 4e971924e39211f4b876e5a5fe2b5010, type: 3}
+  m_SHData: {fileID: 4900000, guid: 613886fe029f564438ad670afdf647ae, type: 3}
+  m_ChunkData: {fileID: 0}
+  m_Cameras: []

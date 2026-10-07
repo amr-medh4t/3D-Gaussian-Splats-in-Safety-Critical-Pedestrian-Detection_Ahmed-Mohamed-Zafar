@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33b71fae31e6c7d438e8566dc713e666, type: 3}
+  m_Name: fence_splat
+  m_EditorClassIdentifier: GaussianSplatting::GaussianSplatting.Runtime.GaussianSplatAsset
+  m_FormatVersion: 20231020
+  m_SplatCount: 100002
+  m_BoundsMin: {x: -1, y: 0, z: -0.04}
+  m_BoundsMax: {x: 1, y: 1.2, z: 0.04}
+  m_DataHash:
+    serializedVersion: 2
+    Hash: dd43c2e35cb093ab4fb259b79123e019
+  m_PosFormat: 0
+  m_ScaleFormat: 0
+  m_SHFormat: 0
+  m_ColorFormat: 0
+  m_PosData: {fileID: 4900000, guid: 85eabad0217aca34ab640b520f7ef6ce, type: 3}
+  m_ColorData: {fileID: 4900000, guid: c49c1aff032bd304d80c7582596e49b9, type: 3}
+  m_OtherData: {fileID: 4900000, guid: 965a8d6f5544b4641bfd9e65d9f88d35, type: 3}
+  m_SHData: {fileID: 4900000, guid: f968d6c2349b02e42a8e868e4507cf45, type: 3}
+  m_ChunkData: {fileID: 0}
+  m_Cameras: []
