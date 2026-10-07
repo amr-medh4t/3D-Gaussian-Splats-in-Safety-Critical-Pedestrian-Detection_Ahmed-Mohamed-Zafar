@@ -47,7 +47,7 @@ their assets because they preserve Unity object references.
 runtime it:
 
 - Starts at a randomized offset near `CrossStart`.
-- Moves toward `CrossEnd`.
+- Moves from `CrossStart` toward `CrossEnd`.
 - Uses a configurable walking speed.
 - Applies a configurable speed variation.
 - Stops after reaching the destination.
@@ -56,9 +56,10 @@ runtime it:
 
 `unity/Assets/Azerilo/Car Model No.1201 Asset/Prefab/SimpleCarDrive.cs`
 contains the `SimpleCarDrive` component. It moves the car through Unity input
-axes and rotates it while moving. The exact capture route and control
-procedure belong to the dataset contributor and should be documented with the
-dataset protocol.
+axes and rotates it while moving. The horizontal and vertical axes are
+normally mapped to the arrow keys, so the operator can choose the route,
+viewpoint, and timing during data collection. The final capture protocol,
+image settings, and file naming procedure belong to the dataset contributor.
 
 ## Unity contribution boundary
 

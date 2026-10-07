@@ -107,12 +107,19 @@ locally with project-specific prompts.
 - An initial visual sample of the environment and pedestrian.
 
 Dataset image capture is outside the scope of this Unity environment
-contribution. The dataset contributor should complete the following section:
+contribution. The environment is prepared to support flexible manual
+collection:
 
+- [x] The pedestrian crosses between configurable `CrossStart` and `CrossEnd`
+      points.
+- [x] The pedestrian movement uses configurable walking speed and controlled
+      start/speed randomization.
+- [x] The car is manually controlled with the Unity horizontal and vertical
+      input axes, allowing the operator to vary the route and viewpoint during
+      collection.
 - [ ] Camera resolution, field of view, and frame rate.
 - [ ] Image capture key, script, or command.
-- [ ] Car route, speed range, and starting pose.
-- [ ] Pedestrian route, speed range, and starting pose.
+- [ ] Collection route, speed, and starting-pose protocol.
 - [ ] Lighting/environment variations.
 - [ ] File naming convention and metadata format.
 - [x] Initial Unity environment sample in
