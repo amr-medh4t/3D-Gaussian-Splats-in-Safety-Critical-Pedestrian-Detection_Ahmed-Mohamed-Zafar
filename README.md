@@ -143,13 +143,22 @@ The current Unity project uses the following external components:
   <https://github.com/aras-p/UnityGaussianSplatting>
 - PromptSplat-generated scene assets and the PromptSplat implementation
   documentation in [`PROJECT_IMPLEMENTATION.md`](./PROJECT_IMPLEMENTATION.md).
-- The Azerilo car asset and the human model/animation asset included under
-  `unity/Assets/`.
+- Human model and walking animation obtained from
+  [Mixamo](https://www.mixamo.com/).
+- Car model obtained from [Sketchfab](https://sketchfab.com/).
 
 **Before public release, the team must verify the redistribution license for
-each downloaded model, texture, animation, and package.** If an asset license
-does not permit redistribution, remove the binary from the repository and
-document how evaluators can obtain it legally.
+each downloaded model, texture, animation, and package. In particular, fill in
+the exact Mixamo asset attribution and Sketchfab asset attribution below:
+
+| Asset | Source URL | Creator | License/terms | Redistribution status |
+| --- | --- | --- | --- | --- |
+| Human model | _To be added_ | _To be added_ | Mixamo terms to be checked | _To be checked_ |
+| Walking animation | _To be added_ | _To be added_ | Mixamo terms to be checked | _To be checked_ |
+| Car model | _To be added_ | _To be added_ | Sketchfab license to be checked | _To be checked_ |
+
+If an asset license does not permit redistribution, remove the binary from the
+repository and document how evaluators can obtain it legally.
 
 ## AI and LLM usage
 
