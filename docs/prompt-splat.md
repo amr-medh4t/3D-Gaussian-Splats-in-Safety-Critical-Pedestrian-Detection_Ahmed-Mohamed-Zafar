@@ -5,6 +5,10 @@
 > the generated Unity assets and integration, not the complete standalone
 > PromptSplat source pipeline.
 
+PromptSplat is a private, locally run GUI application developed with Ahmed
+Mounir. It is not currently released as a public repository. The environments
+in this project were generated locally using prompts authored for this project.
+
 ## 1. Project summary
 
 PromptSplat is a prompt-to-3D environment pipeline. It accepts a natural-language description such as “a three-floor brick house” or “a four-lane street with buildings,” turns that description into a constrained scene plan, builds the scene in Blender, and exports two synchronized assets:

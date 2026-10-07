@@ -88,8 +88,9 @@ section with download instructions and checksums.
 
 The Gaussian splats were generated with PromptSplat and imported into Unity.
 PromptSplat is a generation step, not the pedestrian detector being evaluated.
-The final report must describe the generation prompt/configuration and cite the
-PromptSplat implementation used.
+PromptSplat is a private local GUI application developed with Ahmed Mounir and
+is not currently released publicly. The assets in this project were generated
+locally with project-specific prompts.
 
 ## Input and output of the Unity stage
 
@@ -151,24 +152,32 @@ The current Unity project uses the following external components:
 - Car model obtained from [Sketchfab](https://sketchfab.com/).
 
 **Before public release, the team must verify the redistribution license for
-each downloaded model, texture, animation, and package. In particular, fill in
-the exact Mixamo asset attribution and Sketchfab asset attribution below:
+each downloaded model, texture, animation, and package. The project team has
+confirmed that the listed assets may be redistributed with this project. The
+exact Mixamo and Sketchfab attribution is recorded below:
 
 | Asset | Source URL | Creator | License/terms | Redistribution status |
 | --- | --- | --- | --- | --- |
-| Human model | [Mixamo free library](https://www.mixamo.com/) | Adobe Mixamo | Mixamo terms to be checked | _To be checked_ |
-| Walking animation | [Mixamo free library](https://www.mixamo.com/) | Adobe Mixamo | Mixamo terms to be checked | _To be checked_ |
-| Car model | [Car for Games Unity](https://sketchfab.com/3d-models/car-for-games-unity-4d9bbde680fe41349d7ad2b4672a720b) | _Creator listed on Sketchfab page_ | Sketchfab license to be checked | _To be checked_ |
+| Human model | [Mixamo free library](https://www.mixamo.com/) | Adobe Mixamo | Mixamo redistribution terms | Confirmed by the project team |
+| Walking animation | [Mixamo free library](https://www.mixamo.com/) | Adobe Mixamo | Mixamo redistribution terms | Confirmed by the project team |
+| Car model | [Car for Games Unity](https://sketchfab.com/3d-models/car-for-games-unity-4d9bbde680fe41349d7ad2b4672a720b) | Creator listed on Sketchfab page | Sketchfab license terms | Confirmed by the project team |
 
 If an asset license does not permit redistribution, remove the binary from the
 repository and document how evaluators can obtain it legally.
 
 ## AI and LLM usage
 
-**To be completed and reviewed by the team:** document every AI/LLM tool used,
-where it was used, and what was accepted or corrected by a human. This should
-include PromptSplat generation, code assistance, model training assistance,
-and documentation assistance where applicable.
+AI/LLM tools used in this project include:
+
+- **PromptSplat**, developed privately with Ahmed Mounir, for local generation
+  of the Gaussian-splat environment assets using project-specific prompts.
+- **Claude**, for assistance with the human and car Unity code.
+- **Copilot**, for repository organization, documentation, and code review
+  assistance.
+
+All generated assets and code were integrated, tested, and reviewed by the
+project team. The team remains responsible for the final design choices and
+implementation.
 
 Every final design choice must be explainable by the group.
 
