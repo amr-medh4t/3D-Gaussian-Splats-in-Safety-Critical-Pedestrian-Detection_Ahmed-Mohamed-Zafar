@@ -145,7 +145,7 @@ collection:
 
 - [x] Dataset download location; the full dataset should not be stored in Git.
   - Images and annotations are excluded from version control via `.gitignore`[cite: 9].
-  - Complete archive available at: [INSERT_YOUR_GOOGLE_DRIVE_OR_CLOUD_LINK_HERE][cite: 9, 20].
+  - Complete archive available at: [https://drive.google.com/drive/folders/1Ba6KrsNfvHEkJf9REvHP4OQro6xuFSt8?usp=drive_link].
   - Directory structure adheres to standard YOLO format (`images/train`, `images/val`, `labels/train`, `labels/val`).
 
 - [x] Train/validation/test split
