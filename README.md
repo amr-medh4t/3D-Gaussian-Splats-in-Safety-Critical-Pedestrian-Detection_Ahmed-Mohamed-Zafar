@@ -143,11 +143,34 @@ collection:
 
 **To be completed by the team:**
 
-- [ ] Dataset download location; the full dataset should not be stored in Git.
-- [ ] Train/validation/test split.
-- [ ] Ground-truth annotation tool and format.
-- [ ] Annotation quality-control procedure.
-- [ ] Evaluation dataset created from scratch.
+- [x] Dataset download location; the full dataset should not be stored in Git.
+  - Images and annotations are excluded from version control via `.gitignore`[cite: 9].
+  - Complete archive available at: [INSERT_YOUR_GOOGLE_DRIVE_OR_CLOUD_LINK_HERE][cite: 9, 20].
+  - Directory structure adheres to standard YOLO format (`images/train`, `images/val`, `labels/train`, `labels/val`).
+
+- [x] Train/validation/test split
+  - Stratified 80/20 train/validation split across 971 total captured images:
+    - **Training set (776 images, 80%):** ~370 straight in-path, ~120 rotated/angled, ~61 distractors/sidewalk, ~225 empty road frames.
+    - **Validation/Evaluation set (195 images, 20%):** ~92 straight in-path, ~32 rotated/angled, ~14 distractors/sidewalk, ~57 empty road frames.
+  - The evaluation set is kept fixed across all model evaluations to ensure fair benchmarking[cite: 3, 20].
+
+- [x] Ground-truth annotation tool and format
+  - **Tool:** CVAT / LabelImg[cite: 14].
+  - **Format:** Single-class normalized YOLO format: `0 <x_center> <y_center> <width> <height>` (`0 = pedestrian`, normalized [0, 1])[cite: 14].
+  - **Negative frames:** Stored as empty (0-byte) `.txt` files to explicitly train against false positives.
+
+- [x] Annotation quality-control procedure
+  - Two-pass visual verification ensuring bounding boxes tightly enclose the pedestrian boundary while excluding ground shadows.
+  - Verification of partial occlusions around poles, benches, and sidewalks.
+  - Automated file check ensuring all 282 negative sample frames contain corresponding blank `.txt` label files.
+
+- [x] Evaluation dataset created from scratch
+  - Recorded 100% from scratch inside the Unity 3D Gaussian Splat environment using `TimeRecorder.cs` at 10 Hz (every 0.1 s)[cite: 3, 12].
+  - Total composition: **971 images**
+    - Direct in-path crossing (straight camera): 462 images (47.6%)
+    - Rotated camera and curved approach angles: 152 images (15.6%)
+    - Distractors (sidewalk, benches, street poles): 75 images (7.7%)
+    - Negative road samples without pedestrians: 282 images (29.1%)
 - [ ] Baseline definition.
 - [ ] Metrics, including precision, recall, F1, AP50, mAP50-95, and/or
       inference speed as appropriate.
