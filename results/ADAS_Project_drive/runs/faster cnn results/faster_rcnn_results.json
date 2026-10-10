@@ -1,0 +1,6 @@
+{
+    "model": "Faster R-CNN",
+    "mAP50": 0.9846,
+    "mAP50-95": 0.8733,
+    "inference_time_ms": 171.5
+}

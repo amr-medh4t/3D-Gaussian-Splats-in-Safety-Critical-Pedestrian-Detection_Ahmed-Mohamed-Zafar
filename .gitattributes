@@ -1,5 +1,4 @@
 * text=auto
-
 # Keep Unity YAML and code reviewable.
 unity/**/*.cs text diff=csharp
 unity/**/*.shader text
@@ -7,9 +6,10 @@ unity/**/*.asset text
 unity/**/*.prefab text
 unity/**/*.unity text
 unity/**/*.meta text
-
 # Large Unity and Gaussian-splat binaries are stored with Git LFS.
 unity/**/*.bytes filter=lfs diff=lfs merge=lfs -text
 unity/**/*.fbx filter=lfs diff=lfs merge=lfs -text
 unity/**/*.exr filter=lfs diff=lfs merge=lfs -text
 unity/**/*.png filter=lfs diff=lfs merge=lfs -text
+*.pt filter=lfs diff=lfs merge=lfs -text
+*.pth filter=lfs diff=lfs merge=lfs -text
