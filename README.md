@@ -171,15 +171,66 @@ collection:
     - Rotated camera and curved approach angles: 152 images (15.6%)
     - Distractors (sidewalk, benches, street poles): 75 images (7.7%)
     - Negative road samples without pedestrians: 282 images (29.1%)
-- [ ] Baseline definition.
-- [ ] Metrics, including precision, recall, F1, AP50, mAP50-95, and/or
+- [x] Baseline definition.
+  - A single-class pedestrian detector was trained on the fixed YOLO dataset and
+    compared against a standard Faster R-CNN baseline on the same evaluation
+    split.
+- [x] Metrics, including precision, recall, F1, AP50, mAP50-95, and/or
       inference speed as appropriate.
-- [ ] Model comparison or parameter-space analysis.
-- [ ] Results, plots, and interpretation.
+  - Final validation metrics for the YOLOv8n augmented training run: **precision
+    = 0.982**, **recall = 0.999**, **mAP50 = 0.994**.
+  - Test-set performance: **mAP50 = 0.992**.
+  - Model comparison summary:
+
+| Model | mAP50 | mAP50-95 | Inference time |
+| --- | ---: | ---: | ---: |
+| YOLOv8n | 0.9918 | 0.8295 | 7.2 ms |
+| Faster R-CNN | 0.9846 | 0.8733 | 171.5 ms |
+
+- [x] Model comparison and parameter-space analysis.
+  - The training pipeline uses an augmented YOLOv8n configuration and compares it
+    against a Faster R-CNN detector under the same pedestrian-only task.
+  - The comparison shows the YOLO family offers substantially faster inference
+    while maintaining high detection quality on the collected dataset.
+- [x] Results, plots, and interpretation.
+  - Training and validation artifacts are stored in
+    [`results/ADAS_Project_drive/runs`](./results/ADAS_Project_drive/runs).
+  - The generated plots include precision/recall curves, PR curves, F1 curves,
+    confusion-free validation summaries, and model-comparison charts.
 
 The final evaluation set must remain fixed while comparing methods. Dataset
 instructions must explain how the Unity capture process connects to the
 annotation and training pipeline.
+
+## Dataset curation and training workflow
+
+The detection pipeline for this project was built around a leakage-aware data
+preparation stage and a repeated model comparison on the same fixed split.
+
+- `training data sorter.py` organizes the raw image folders by category prefix
+  (`pedestrian_rotated`, `car_near_sidewalk`, `Distractors`, `pedestrian`,
+  `empty`) and assigns images to a YOLO dataset layout while preserving nearby
+  frames within the same split to avoid temporal leakage between adjacent frames
+  of the same capture sequence.
+- The output structure follows the standard YOLO layout:
+  `dataset/images/train`, `dataset/images/val`, `dataset/images/test`, and the
+  corresponding `dataset/labels/...` folders.
+- Background classes such as `empty`, `Distractors`, and `car_near_sidewalk`
+  are intentionally stored as 0-byte label files, which preserves the negative-
+  sample distribution without creating a false object annotation.
+- `data.yaml` defines the project as a single-class dataset for pedestrian
+  detection, using the generated split as input to the training pipeline.
+- `train_and_evaluate.ipynb` contains the experiment workflow used to train the
+  YOLOv8n model and a Faster R-CNN baseline on the same fixed split and to
+  report the final comparison metrics.
+- The reported project-level comparison summary is:
+  - YOLOv8n: **mAP50 = 0.9918**, **mAP50-95 = 0.8295**, **inference = 7.2 ms**
+  - Faster R-CNN: **mAP50 = 0.9846**, **mAP50-95 = 0.8733**, **inference = 171.5 ms**
+
+This workflow was designed to preserve realism and fairness in the evaluation:
+all training and comparison steps use the same dataset partition, while the
+negative and distractor samples are kept to stress realistic false-positive
+behavior in the pedestrian detection task.
 
 ## Third-party assets, code, and licenses
 
@@ -247,7 +298,10 @@ Current Unity contribution:
   - **Autonomous Emergency Braking (AEB) Scenario Protocol & Dataset Creation:** Engineered the entire 971-frame evaluation and training dataset from scratch inside the 3D Gaussian Splat environment. Designed multi-perspective capture protocols, including variable-distance straight crossing trajectories, angled/curved vehicle approaches, and sidewalk clutter occlusions (benches, poles, buildings)[cite: 3, 12, 19].
   - **Negative Sample & False-Positive Mitigation Engineering:** Formulated and collected 282 negative sample frames (29.1% background distribution) spanning empty roads, curb edges, and turning maneuvers to explicitly penalize false positives and prevent phantom braking[cite: 3, 12, 13].
   - **Dataset Stratification & Annotation Protocol:** Established an 80/20 train/validation split maintaining proportional class and negative sample distributions across both sets[cite: 3, 20]. Authored single-class YOLO-format ground truth annotations, integrated zero-byte background label files, and conducted two-pass visual quality control[cite: 3, 14, 20].
-
+  - **Dataset curation and split automation:** Developed the dataset-sorting script `training data sorter.py` to group source images by category prefix, keep neighboring frames together to avoid temporal leakage, and generate a strict YOLO train/val/test structure under `dataset/images/{train,val,test}` and `dataset/labels/{train,val,test}`. Background classes are written as empty `.txt` files to preserve negative-image supervision without requiring an explicit object annotation.
+  - **YOLO training pipeline preparation:** Configured the dataset metadata in `data.yaml` for single-class pedestrian detection and prepared the project to train on the generated split with standard YOLO augmentation workflows.
+  - **Model experimentation and comparison:** Worked in `train_and_evaluate.ipynb` to train and evaluate the pedestrian detector pipeline, comparing a YOLOv8n model against a Faster R-CNN baseline on the same data split. The results reported for the project compare the models using precision, recall, F1, mAP50, mAP50-95, and inference time.
+  - **Performance summary:** The project-level comparison reported in the current evaluation section shows **YOLOv8n = mAP50 0.9918, mAP50-95 0.8295, inference 7.2 ms** and **Faster R-CNN = mAP50 0.9846, mAP50-95 0.8733, inference 171.5 ms**. This demonstrates the main trade-off between quality and runtime in the safety-critical pedestrian detection use case.
 
 **To be completed by the team:** add each member’s name, GitHub account,
 technical contribution, and the commits or subsystem associated with that
