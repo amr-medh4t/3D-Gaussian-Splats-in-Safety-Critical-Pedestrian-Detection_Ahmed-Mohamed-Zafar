@@ -241,6 +241,14 @@ Current Unity contribution:
 - Car integration and controllable movement.
 - Initial Unity project organization for reproducible scene setup.
 
+- **[Umair Zafar]** (`[wumairz]`):
+  - **Asynchronous Simulation Data Capture Pipeline:** Designed, implemented, and debugged a custom C# engine recorder (`TimeRecorder.cs`) using `Time.unscaledDeltaTime` and `ScreenCapture` to bypass frame-rate starvation and enable continuous 10 Hz sampling across dynamic vehicle maneuvers and stationary/parked vehicle states.
+  - **File I/O & Persistent Storage Management:** Implemented runtime session timestamping (`run_YYYYMMDD_HHMMSS`) and externalized dataset generation to the project root directory outside `Assets/`, ensuring non-destructive cumulative captures immune to Unity engine asset database re-import purges[cite: 3].
+  - **Autonomous Emergency Braking (AEB) Scenario Protocol & Dataset Creation:** Engineered the entire 971-frame evaluation and training dataset from scratch inside the 3D Gaussian Splat environment. Designed multi-perspective capture protocols, including variable-distance straight crossing trajectories, angled/curved vehicle approaches, and sidewalk clutter occlusions (benches, poles, buildings)[cite: 3, 12, 19].
+  - **Negative Sample & False-Positive Mitigation Engineering:** Formulated and collected 282 negative sample frames (29.1% background distribution) spanning empty roads, curb edges, and turning maneuvers to explicitly penalize false positives and prevent phantom braking[cite: 3, 12, 13].
+  - **Dataset Stratification & Annotation Protocol:** Established an 80/20 train/validation split maintaining proportional class and negative sample distributions across both sets[cite: 3, 20]. Authored single-class YOLO-format ground truth annotations, integrated zero-byte background label files, and conducted two-pass visual quality control[cite: 3, 14, 20].
+
+
 **To be completed by the team:** add each member’s name, GitHub account,
 technical contribution, and the commits or subsystem associated with that
 contribution.
