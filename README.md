@@ -117,11 +117,25 @@ collection:
 - [x] The car is manually controlled with the Unity horizontal and vertical
       input axes, allowing the operator to vary the route and viewpoint during
       collection.
-- [ ] Camera resolution, field of view, and frame rate.
-- [ ] Image capture key, script, or command.
-- [ ] Collection route, speed, and starting-pose protocol.
-- [ ] Lighting/environment variations.
-- [ ] File naming convention and metadata format.
+- [x] Camera resolution, field of view, and frame rate
+  - Resolution: 1920 × 1080 (Full HD, Game View native buffer).
+  - Field of View (FOV): 60° vertical FOV (perspective projection, vehicle hood mount at Y = 1.2 m, Z = 0.3 m).
+  - Effective Capture Rate: 10 Hz (10 FPS / one frame every 0.1 s unscaled simulation delta time).
+- [x] Image capture key, script, or command:
+  - Automated continuous time-based capture script (`TimeRecorder.cs`) attached to `Main Camera`.
+  - Uses `ScreenCapture.CaptureScreenshot()` driven by `Time.unscaledDeltaTime` to record continuously both while driving and while parked.
+- [x] Collection route, speed, and starting-pose protocol:
+  - Stationary captures at multiple distances (1 m to 25 m) to capture full pedestrian crossing trajectories at varying pixel scales.
+  - Straight-ahead driving runs approaching the crossing zone.
+  - Rotated camera perspectives (curved approaches and off-angle road alignments).
+  - Empty road passes (full road traverse, end-of-road turnarounds, and curb alignments) with zero pedestrians to collect negative samples.
+- [x] Lighting/environment variations:
+  - Directional sunlight with 3D Gaussian Splat ambient reflections.
+  - Complex background clutter including sidewalk benches, trees, light poles, and building geometries.
+- [x] File naming convention and metadata format:
+  - Files are saved outside `Assets/` in the project root (`TrainingDataset/`) to avoid engine re-import purges.
+  - Format: `run_YYYYMMDD_HHMMSS_frame_XXXXX.png` (session timestamp prefix + 5-digit zero-padded index).
+  - Corresponding label format: YOLO standard single-class format (`<class_id> <x_center> <y_center> <width> <height>`, normalized [0, 1]). Empty street images use empty 0-byte `.txt` files.
 - [x] Initial Unity environment sample in
       [`docs/samples/unity-environment-pedestrian.png`](./docs/samples/unity-environment-pedestrian.png).
 
