@@ -204,33 +204,37 @@ annotation and training pipeline.
 
 ## Dataset curation and training workflow
 
-The detection pipeline for this project was built around a leakage-aware data
-preparation stage and a repeated model comparison on the same fixed split.
+This section describes the work completed by the author of this contribution: data capture, dataset sorting, augmentation, and training/evaluation preparation.
 
 - `training data sorter.py` organizes the raw image folders by category prefix
   (`pedestrian_rotated`, `car_near_sidewalk`, `Distractors`, `pedestrian`,
-  `empty`) and assigns images to a YOLO dataset layout while preserving nearby
-  frames within the same split to avoid temporal leakage between adjacent frames
-  of the same capture sequence.
-- The output structure follows the standard YOLO layout:
-  `dataset/images/train`, `dataset/images/val`, `dataset/images/test`, and the
+  `empty`) and builds a YOLO-ready dataset structure. The script preserves
+  temporal continuity by grouping nearby frames before the split, which reduces
+  leakage between adjacent frames from the same capture sequence.
+- The dataset layout follows the standard YOLO format:
+  `dataset/images/train`, `dataset/images/val`, `dataset/images/test` and the
   corresponding `dataset/labels/...` folders.
-- Background classes such as `empty`, `Distractors`, and `car_near_sidewalk`
-  are intentionally stored as 0-byte label files, which preserves the negative-
-  sample distribution without creating a false object annotation.
-- `data.yaml` defines the project as a single-class dataset for pedestrian
-  detection, using the generated split as input to the training pipeline.
-- `train_and_evaluate.ipynb` contains the experiment workflow used to train the
-  YOLOv8n model and a Faster R-CNN baseline on the same fixed split and to
-  report the final comparison metrics.
-- The reported project-level comparison summary is:
-  - YOLOv8n: **mAP50 = 0.9918**, **mAP50-95 = 0.8295**, **inference = 7.2 ms**
-  - Faster R-CNN: **mAP50 = 0.9846**, **mAP50-95 = 0.8733**, **inference = 171.5 ms**
+- Background and distractor frames such as `empty`, `Distractors`, and
+  `car_near_sidewalk` are intentionally stored as empty 0-byte `.txt` files.
+  This keeps the negative-sample distribution explicit without creating an
+  invalid object annotation.
+- `data.yaml` defines the project as a single-class pedestrian detection task.
+- `auto_label_pedestrians.py` was used to generate preliminary YOLO boxes with
+  a pretrained Ultralytics model, followed by manual review to keep only valid
+  pedestrian annotations and preserve the negative samples.
+- `train_and_evaluate.ipynb` contains the project training and comparison workflow:
+  - YOLOv8n model training with augmentation,
+  - evaluation on the fixed split,
+  - Faster R-CNN baseline comparison on the same data split.
 
-This workflow was designed to preserve realism and fairness in the evaluation:
-all training and comparison steps use the same dataset partition, while the
-negative and distractor samples are kept to stress realistic false-positive
-behavior in the pedestrian detection task.
+The reported comparison values for the project are:
+- YOLOv8n: **mAP50 = 0.9918**, **mAP50-95 = 0.8295**, **inference = 7.2 ms**
+- Faster R-CNN: **mAP50 = 0.9846**, **mAP50-95 = 0.8733**, **inference = 171.5 ms**
+
+This workflow was designed to preserve fairness in evaluation: all training and
+comparison steps use the same dataset partition while the negative and distractor
+samples are retained to stress realistic false-positive behavior in the
+pedestrian detection task.
 
 ## Third-party assets, code, and licenses
 
@@ -283,29 +287,21 @@ repositories, and related Gaussian-splatting or pedestrian-detection
 implementations. For each reused implementation, explain what was reused,
 adapted, or changed.
 
-## Contributions
+## My contribution (Umair Zafar)
 
-Current Unity contribution:
+This section describes only the work completed by the author of this contribution.
 
-- Environment construction and Gaussian-splat import.
-- Human model integration and pedestrian path behavior.
-- Car integration and controllable movement.
-- Initial Unity project organization for reproducible scene setup.
+- **Asynchronous dataset capture pipeline:** Designed and implemented a custom C# capture workflow (`TimeRecorder.cs`) using `Time.unscaledDeltaTime` and `ScreenCapture` to avoid frame starvation and to maintain continuous 10 Hz capture even while the vehicle was stationary or parked.
+- **Persistent file management and capture organization:** Added runtime timestamping (`run_YYYYMMDD_HHMMSS`) and saved frames outside `Assets/` in the project root to avoid Unity re-import purges and to keep captured runs organized.
+- **AEB scenario and dataset creation:** Built the dataset from scratch inside the 3D Gaussian Splat environment, covering straight crossing, angled/rotated approaches, distractor scenes, and negative samples.
+- **Negative-sample engineering:** Collected empty-road and clutter frames to explicitly penalize false positives and reduce phantom braking behavior.
+- **Dataset splitting and curation:** Developed `training data sorter.py` to group raw images by category prefix, enforce a stratified 80/10/10 split, and create a YOLO-ready folder structure under `dataset/images/{train,val,test}` and `dataset/labels/{train,val,test}`.
+- **Annotation and QC:** Used a single-class YOLO labeling workflow with empty label files for background images, then applied a two-pass visual check to ensure boxes fit the pedestrian silhouette and that negatives remained unlabeled.
+- **Training preparation:** Configured `data.yaml` for single-class pedestrian detection and prepared the training pipeline for YOLO augmentation and evaluation.
+- **YOLO and Faster R-CNN comparison:** Worked in `train_and_evaluate.ipynb` to train the YOLOv8n model and compare it against a Faster R-CNN baseline on the same dataset split.
+- **Benchmark summary:** The project comparison reported in the repository shows **YOLOv8n = mAP50 0.9918, mAP50-95 0.8295, inference 7.2 ms** and **Faster R-CNN = mAP50 0.9846, mAP50-95 0.8733, inference 171.5 ms**.
 
-- **[Umair Zafar]** (`[wumairz]`):
-  - **Asynchronous Simulation Data Capture Pipeline:** Designed, implemented, and debugged a custom C# engine recorder (`TimeRecorder.cs`) using `Time.unscaledDeltaTime` and `ScreenCapture` to bypass frame-rate starvation and enable continuous 10 Hz sampling across dynamic vehicle maneuvers and stationary/parked vehicle states.
-  - **File I/O & Persistent Storage Management:** Implemented runtime session timestamping (`run_YYYYMMDD_HHMMSS`) and externalized dataset generation to the project root directory outside `Assets/`, ensuring non-destructive cumulative captures immune to Unity engine asset database re-import purges[cite: 3].
-  - **Autonomous Emergency Braking (AEB) Scenario Protocol & Dataset Creation:** Engineered the entire 971-frame evaluation and training dataset from scratch inside the 3D Gaussian Splat environment. Designed multi-perspective capture protocols, including variable-distance straight crossing trajectories, angled/curved vehicle approaches, and sidewalk clutter occlusions (benches, poles, buildings)[cite: 3, 12, 19].
-  - **Negative Sample & False-Positive Mitigation Engineering:** Formulated and collected 282 negative sample frames (29.1% background distribution) spanning empty roads, curb edges, and turning maneuvers to explicitly penalize false positives and prevent phantom braking[cite: 3, 12, 13].
-  - **Dataset Stratification & Annotation Protocol:** Established an 80/20 train/validation split maintaining proportional class and negative sample distributions across both sets[cite: 3, 20]. Authored single-class YOLO-format ground truth annotations, integrated zero-byte background label files, and conducted two-pass visual quality control[cite: 3, 14, 20].
-  - **Dataset curation and split automation:** Developed the dataset-sorting script `training data sorter.py` to group source images by category prefix, keep neighboring frames together to avoid temporal leakage, and generate a strict YOLO train/val/test structure under `dataset/images/{train,val,test}` and `dataset/labels/{train,val,test}`. Background classes are written as empty `.txt` files to preserve negative-image supervision without requiring an explicit object annotation.
-  - **YOLO training pipeline preparation:** Configured the dataset metadata in `data.yaml` for single-class pedestrian detection and prepared the project to train on the generated split with standard YOLO augmentation workflows.
-  - **Model experimentation and comparison:** Worked in `train_and_evaluate.ipynb` to train and evaluate the pedestrian detector pipeline, comparing a YOLOv8n model against a Faster R-CNN baseline on the same data split. The results reported for the project compare the models using precision, recall, F1, mAP50, mAP50-95, and inference time.
-  - **Performance summary:** The project-level comparison reported in the current evaluation section shows **YOLOv8n = mAP50 0.9918, mAP50-95 0.8295, inference 7.2 ms** and **Faster R-CNN = mAP50 0.9846, mAP50-95 0.8733, inference 171.5 ms**. This demonstrates the main trade-off between quality and runtime in the safety-critical pedestrian detection use case.
-
-**To be completed by the team:** add each member’s name, GitHub account,
-technical contribution, and the commits or subsystem associated with that
-contribution.
+This contribution focuses on the dataset engineering, annotation, split automation, augmentation preparation, and model-training comparison completed as part of my work.
 
 ## Known limitations of this stage
 
