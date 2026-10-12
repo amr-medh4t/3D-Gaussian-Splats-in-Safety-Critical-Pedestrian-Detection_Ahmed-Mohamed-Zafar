@@ -1,315 +1,352 @@
 # 3D Gaussian Splats in Safety-Critical Pedestrian Detection
 
-Computer vision final project for Industrial Applications of Computer Vision,
-A.A. 2025–26.
+Final project for **Industrial Applications of Computer Vision**, Università degli Studi di Padova, A.A. 2025–26.
 
-> This README is being extended incrementally as each group member adds their
-> part. The sections marked **To be completed by the team** are placeholders
-> and are not claims about work that is already finished.
+A synthetic, safety-critical driving scenario is built in Unity on top of 3D Gaussian-splat environments. A vehicle-mounted camera records pedestrians crossing the road, the frames are labeled with a model-assisted (auto-labeling) pipeline, and a single-class pedestrian detector (YOLOv8n) is trained without and with augmentation and compared against an augmented Faster R-CNN model on a fixed split.
 
-## Project goal
+![Unity environment with a crossing pedestrian](./docs/samples/unity-environment-pedestrian.png)
 
-The project investigates pedestrian detection in a controlled, safety-critical
-driving scenario. A Unity environment provides a repeatable scene in which a
-vehicle camera can observe pedestrians under controlled geometry, motion, and
-lighting conditions. The captured images are then used by the computer-vision
-pipeline for training and evaluation.
+Example detection outputs (bounding boxes with confidence scores) are in [`results/ADAS_Project_drive/runs/detect/predict/`](./results/ADAS_Project_drive/runs/detect/predict/).
 
-The complete project will combine:
+---
 
-1. Unity environment construction and image capture.
-2. Dataset preparation and ground-truth annotation.
-3. YOLO training and inference.
-4. Comparison against a baseline and/or another approach.
-5. Quantitative evaluation and discussion of limitations.
+## Table of contents
 
-## Repository structure
+1. [Team and contributions](#1-team-and-contributions)
+2. [Problem definition](#2-problem-definition)
+3. [Repository structure](#3-repository-structure)
+4. [Setup and how to run](#4-setup-and-how-to-run)
+5. [Unity environment](#5-unity-environment)
+6. [Dataset](#6-dataset)
+7. [Ground truth and annotation](#7-ground-truth-and-annotation)
+8. [Evaluation](#8-evaluation)
+9. [Third-party code, assets and licenses](#9-third-party-code-assets-and-licenses)
+10. [AI and LLM usage](#10-ai-and-llm-usage)
+11. [References and existing implementations](#11-references-and-existing-implementations)
+12. [Known limitations](#12-known-limitations)
+
+---
+
+## 1. Team and contributions
+
+Each member contributed through their own GitHub account, so the commit history documents the individual work. Where work was done jointly, it is attributed to everyone involved.
+
+| Member | GitHub | Main area |
+| --- | --- | --- |
+| **Ahmed Amr** | [`amr-medh4t`](https://github.com/amr-medh4t) | Unity environment |
+| **Zafar Umair** | [`wumairz`](https://github.com/wumairz) | Data collection in Unity, dataset creation |
+| **Mohamed Youssef** | [`yusuf-unipd`](https://github.com/yusuf-unipd) | Auto-labeling, label verification, model training and evaluation |
+
+### Ahmed Amr — Unity environment
+
+- Built the Unity project (Unity **6000.5.6f1**, Universal Render Pipeline) and the main scene `Assets/Scenes/SampleScene.unity`.
+- Imported the Gaussian-splat environment assets generated with PromptSplat into `Assets/GaussianAssets/`.
+- Integrated the Mixamo human model and walking animation controller.
+- Implemented pedestrian crossing behavior in `Assets/HumanPath.cs`: configurable `CrossStart`/`CrossEnd` endpoints, walking speed, and start/speed randomization.
+- Integrated the car prefab and its manual driving script (`SimpleCarDrive.cs`).
+- Organized the project for reproducible setup (package manifest, lock file, `.gitignore`, `docs/unity-setup.md`).
+
+### Zafar Umair — Data collection and dataset creation
+
+- **Capture pipeline:** designed and implemented `TimeRecorder.cs`, a C# recorder using `Time.unscaledDeltaTime` and `ScreenCapture` that samples continuously at 10 Hz, both while the car is driving and while it is parked.
+- **Storage management:** session-timestamped output (`run_YYYYMMDD_HHMMSS`) written outside `Assets/`, so cumulative captures are not lost when Unity re-imports assets.
+- **Dataset creation:** collected the full 971-frame dataset from scratch inside the Gaussian-splat environment. Capture protocols cover variable-distance straight crossings, angled and curved approaches, and sidewalk clutter occlusions (benches, poles, buildings).
+- **Negative samples:** collected 282 pedestrian-free frames (empty roads, curb edges, turning maneuvers) to penalize false positives and phantom braking.
+- **Dataset sorting and split (joint with Mohamed Youssef):** `training data sorter.py`, which groups images by category prefix, keeps neighboring frames of a sequence in the same split, and builds the YOLO `images/` and `labels/` layout.
+
+### Mohamed Youssef — Labeling, training and evaluation
+
+- **Auto-labeling:** `auto_label_pedestrians.py`, which generates preliminary single-class YOLO boxes with a pretrained Ultralytics model (see [Section 7](#7-ground-truth-and-annotation)).
+- **Label verification:** carried out the two-pass verification of the generated labels described in Section 7.
+- **Dataset sorting and configuration (joint with Zafar Umair):** the sorter script, plus `data.yaml` for single-class pedestrian detection.
+- **Training and comparison:** trained the YOLOv8n runs (unaugmented and augmented) and the Faster R-CNN (ResNet-50 FPN) model on augmented data, in `train_and_evaluate.ipynb`, on the same split.
+- **Metrics and results:** computed precision, recall, mAP50, mAP50-95 and inference time; produced the plots and run artifacts in `results/ADAS_Project_drive/runs/`.
+
+---
+
+## 2. Problem definition
+
+**Goal.** Detect pedestrians crossing in front of a vehicle in a safety-critical scenario, where a missed detection can lead to a collision and a false positive can trigger unnecessary braking.
+
+| | |
+| --- | --- |
+| **Input** | A single RGB frame, 1920 × 1080, from a vehicle-mounted camera in the Unity scene. |
+| **Output** | Zero or more bounding boxes for the single class `pedestrian`, each with a confidence score. |
+| **Out of scope** | Braking or control logic, pedestrian tracking, distance or speed estimation, multi-class detection, and real-world (non-synthetic) imagery. |
+
+**Metrics.** Standard detection metrics, so results are comparable with other work: precision, recall, mAP50, mAP50-95, and per-image inference time.
+
+---
+
+## 3. Repository structure
 
 ```text
-unity/          Unity source project and Gaussian-splat scene assets
-docs/           Project documentation and sample images
-dataset/        Small examples and instructions for obtaining the dataset
-detection/      Training, inference, and evaluation code (team additions)
-results/        Metrics, plots, and experiment outputs (team additions)
+3D-Gaussian-Splats-in-Safety-Critical-Pedestrian-Detection_Ahmed-Mohamed-Zafar/
+├── README.md
+├── requirements.txt              Python dependencies
+├── .gitignore
+├── data.yaml                     YOLO dataset config (single class: pedestrian)
+├── auto_label_pedestrians.py     Generates preliminary YOLO labels with a pretrained model
+├── training data sorter.py       Builds the leakage-aware train/val/test split
+├── train_and_evaluate.ipynb      Training, comparison and metrics
+├── unity/                        Unity project (environment and capture)
+│   ├── Assets/
+│   │   ├── GaussianAssets/       Gaussian-splat scene assets (Git LFS)
+│   │   ├── Azerilo/              Car model and SimpleCarDrive.cs
+│   │   ├── Scenes/               SampleScene.unity
+│   │   └── HumanPath.cs          Pedestrian crossing behavior
+│   ├── Packages/                 manifest.json and packages-lock.json
+│   └── ProjectSettings/
+├── dataset/                      YOLO-format dataset (not versioned; see Section 6)
+│   ├── images/{train,val,test}
+│   └── labels/{train,val,test}
+├── docs/
+│   ├── unity-setup.md            Detailed Unity setup and handoff notes
+│   ├── prompt-splat.md           PromptSplat documentation
+│   └── samples/                  Sample images
+└── results/
+    └── ADAS_Project_drive/runs/  Training and validation artifacts, plots
 ```
 
-The Unity project intentionally does not include generated folders such as
-`Library/`, `Logs/`, `UserSettings/`, or build outputs. Unity regenerates these
-when the project is opened.
+`Library/`, `Logs/`, `UserSettings/` and build outputs are intentionally excluded; Unity regenerates them when the project is opened.
 
-Detailed Unity setup and handoff notes are in
-[`docs/unity-setup.md`](./docs/unity-setup.md).
+---
 
-## Unity contribution
+## 4. Setup and how to run
 
-### Implemented in this stage
+### Python environment (labeling, training and evaluation)
 
-The `unity/` project currently contains the Unity environment work:
+Training and evaluation of the YOLOv8n runs were done in Google Colab (NVIDIA T4 GPU); data preparation scripts were run locally.
 
-- Unity version: **6000.5.6f1**.
-- Universal Render Pipeline configuration.
-- Gaussian-splat environment assets imported into
-  [`unity/Assets/GaussianAssets/`](./unity/Assets/GaussianAssets).
-- The main environment scene:
-  [`unity/Assets/Scenes/SampleScene.unity`](./unity/Assets/Scenes/SampleScene.unity).
-- A human model and walking animation controller.
-- Pedestrian crossing behavior in
-  [`unity/Assets/HumanPath.cs`](./unity/Assets/HumanPath.cs), including
-  configurable endpoints, speed, and start/speed randomization.
-- A controllable car prefab and movement script in
-  [`unity/Assets/Azerilo/Car Model No.1201 Asset/Prefab/SimpleCarDrive.cs`](./unity/Assets/Azerilo/Car%20Model%20No.1201%20Asset/Prefab/SimpleCarDrive.cs).
-- Unity package and project settings needed to restore the project.
+| Component | Version |
+| --- | --- |
+| Python | 3.10 (Colab) / 3.11 (local scripts) |
+| PyTorch | 2.2.0+cu121 |
+| Torchvision | 0.17.0+cu121 |
+| Ultralytics | 8.1.0 |
+| OpenCV | opencv-python 4.9.0.80 |
 
-The pedestrian and car scripts are scene components. Their exact references,
-camera setup, capture controls, and intended test routes should be documented
-with the final scene instructions before the final submission.
+```bash
+pip install -r requirements.txt
+```
 
-### Opening the Unity project
+### Pipeline
+
+1. **Get the dataset.** Download the raw captured images from the Drive link in [Section 6](#6-dataset).
+2. **Auto-label.** Generate preliminary pedestrian boxes for the pedestrian categories:
+   ```bash
+   python auto_label_pedestrians.py
+   ```
+   Set the input image folder and output label folder at the top of the script before running.
+3. **Verify labels.** Apply the two-pass verification in Section 7.
+4. **Build the split.** Run the sorter on the labeled images:
+   ```bash
+   python "training data sorter.py"
+   ```
+   Set the raw image/label folder and the output `dataset/` folder at the top of the script before running. The script produces the 80/10/10 split described in Section 6.
+5. **Train and evaluate.** Open and run `train_and_evaluate.ipynb`. It reads `data.yaml`, trains YOLOv8n (unaugmented and augmented) and Faster R-CNN (augmented), and writes metrics and plots to `results/ADAS_Project_drive/runs/`.
+
+### Unity project (environment and capture)
 
 1. Install Unity **6000.5.6f1**.
-2. Clone this repository with Git LFS enabled.
+2. Clone the repository with Git LFS enabled (`git lfs install` before cloning).
 3. Open the `unity/` folder in Unity Hub.
-4. Open `Assets/Scenes/SampleScene.unity`.
-5. Allow Unity to reimport the assets and regenerate its `Library/` folder.
-6. Press Play and verify the environment, pedestrian, car, and camera.
+4. Open `Assets/Scenes/SampleScene.unity` and let Unity reimport assets and regenerate `Library/`.
+5. Press Play to check the environment, pedestrian, car and camera.
 
-The Gaussian-splat package is declared in
-[`unity/Packages/manifest.json`](./unity/Packages/manifest.json) and its
-resolved dependencies are recorded in
-[`unity/Packages/packages-lock.json`](./unity/Packages/packages-lock.json).
+The Gaussian-splat package is declared in [`unity/Packages/manifest.json`](./unity/Packages/manifest.json) with resolved dependencies in [`packages-lock.json`](./unity/Packages/packages-lock.json). More detail is in [`docs/unity-setup.md`](./docs/unity-setup.md).
 
-### Gaussian-splat assets
+### Inputs and outputs per stage
 
-The Unity environment contains approximately 345 MB of Gaussian-splat binary
-data. These files are required for the complete visual environment and are
-tracked with Git LFS. If the repository hosting quota is insufficient, the
-team will move these files to approved external storage and replace this
-section with download instructions and checksums.
+| Stage | Input | Output |
+| --- | --- | --- |
+| Unity environment | Gaussian-splat assets, car and pedestrian prefabs, path parameters | A configured scene ready for vehicle-camera capture |
+| Data capture | The running Unity scene | Timestamped PNG frames in `TrainingDataset/` (project root) |
+| Auto-labeling | PNG frames | Preliminary YOLO `.txt` labels |
+| Verification | Preliminary labels | Verified labels (empty file for negatives) |
+| Sorting | Images and verified labels | `dataset/images|labels/{train,val,test}` |
+| Training / evaluation | `data.yaml` and the dataset | Weights, metrics, plots, comparison table |
 
-The Gaussian splats were generated with PromptSplat and imported into Unity.
-PromptSplat is a generation step, not the pedestrian detector being evaluated.
-PromptSplat is a private local GUI application developed with Ahmed Mounir and
-is not currently released publicly. The assets in this project were generated
-locally with project-specific prompts.
+---
 
-## Input and output of the Unity stage
+## 5. Unity environment
 
-**Inputs**
+**Scene components**
 
-- Unity scene and imported Gaussian-splat assets.
-- Car and pedestrian prefabs.
-- Configured movement paths and scene parameters.
+- Gaussian-splat environment in [`unity/Assets/GaussianAssets/`](./unity/Assets/GaussianAssets), about 345 MB of binary data tracked with Git LFS.
+- Pedestrian: [`HumanPath.cs`](./unity/Assets/HumanPath.cs) moves the Mixamo character between configurable `CrossStart` and `CrossEnd` points with controlled speed and start randomization.
+- Car: manually driven with the Unity horizontal and vertical input axes via [`SimpleCarDrive.cs`](./unity/Assets/Azerilo/Car%20Model%20No.1201%20Asset/Prefab/SimpleCarDrive.cs), so the operator can vary route and viewpoint.
 
-**Outputs**
+**Gaussian-splat generation.** The splats were generated locally with **PromptSplat**, a private GUI application developed with Ahmed Mounir (external collaborator, not a member of this group). It is not publicly released. PromptSplat is only a scene-generation step; it is not the detector being evaluated. See [`docs/prompt-splat.md`](./docs/prompt-splat.md).
 
-- A configured Unity environment ready for vehicle-camera capture.
-- Scene/configuration metadata needed by the dataset contributor.
-- An initial visual sample of the environment and pedestrian.
+**Capture setup**
 
-Dataset image capture is outside the scope of this Unity environment
-contribution. The environment is prepared to support flexible manual
-collection:
+| Parameter | Value |
+| --- | --- |
+| Resolution | 1920 × 1080 (Full HD, Game View buffer) |
+| Field of view | 60° vertical, perspective projection |
+| Camera mount | Vehicle hood, Y = 1.2 m, Z = 0.3 m |
+| Capture rate | 10 Hz (one frame every 0.1 s of unscaled time) |
+| Script | `TimeRecorder.cs`, attached to `Main Camera`, using `ScreenCapture.CaptureScreenshot()` |
+| Output folder | `TrainingDataset/` in the project root (outside `Assets/`) |
+| File naming | `run_YYYYMMDD_HHMMSS_frame_XXXXX.png` (session timestamp + 5-digit index) |
 
-- [x] The pedestrian crosses between configurable `CrossStart` and `CrossEnd`
-      points.
-- [x] The pedestrian movement uses configurable walking speed and controlled
-      start/speed randomization.
-- [x] The car is manually controlled with the Unity horizontal and vertical
-      input axes, allowing the operator to vary the route and viewpoint during
-      collection.
-- [x] Camera resolution, field of view, and frame rate
-  - Resolution: 1920 × 1080 (Full HD, Game View native buffer).
-  - Field of View (FOV): 60° vertical FOV (perspective projection, vehicle hood mount at Y = 1.2 m, Z = 0.3 m).
-  - Effective Capture Rate: 10 Hz (10 FPS / one frame every 0.1 s unscaled simulation delta time).
-- [x] Image capture key, script, or command:
-  - Automated continuous time-based capture script (`TimeRecorder.cs`) attached to `Main Camera`.
-  - Uses `ScreenCapture.CaptureScreenshot()` driven by `Time.unscaledDeltaTime` to record continuously both while driving and while parked.
-- [x] Collection route, speed, and starting-pose protocol:
-  - Stationary captures at multiple distances (1 m to 25 m) to capture full pedestrian crossing trajectories at varying pixel scales.
-  - Straight-ahead driving runs approaching the crossing zone.
-  - Rotated camera perspectives (curved approaches and off-angle road alignments).
-  - Empty road passes (full road traverse, end-of-road turnarounds, and curb alignments) with zero pedestrians to collect negative samples.
-- [x] Lighting/environment variations:
-  - Directional sunlight with 3D Gaussian Splat ambient reflections.
-  - Complex background clutter including sidewalk benches, trees, light poles, and building geometries.
-- [x] File naming convention and metadata format:
-  - Files are saved outside `Assets/` in the project root (`TrainingDataset/`) to avoid engine re-import purges.
-  - Format: `run_YYYYMMDD_HHMMSS_frame_XXXXX.png` (session timestamp prefix + 5-digit zero-padded index).
-  - Corresponding label format: YOLO standard single-class format (`<class_id> <x_center> <y_center> <width> <height>`, normalized [0, 1]). Empty street images use empty 0-byte `.txt` files.
-- [x] Initial Unity environment sample in
-      [`docs/samples/unity-environment-pedestrian.png`](./docs/samples/unity-environment-pedestrian.png).
+**Capture protocol**
 
-## Dataset and evaluation
+- Stationary captures at distances from 1 m to 25 m, recording full crossing trajectories at different pixel scales.
+- Straight-ahead driving runs approaching the crossing.
+- Rotated camera perspectives (curved approaches, off-angle road alignments).
+- Empty-road passes (full road traverse, turnarounds, curb alignments) with no pedestrian, for negative samples.
 
-**To be completed by the team:**
+**Lighting and clutter.** Directional sunlight with Gaussian-splat ambient reflections; background clutter includes benches, trees, light poles and buildings.
 
-- [x] Dataset download location; the full dataset should not be stored in Git.
-  - Images and annotations are excluded from version control via `.gitignore`[cite: 9].
-  - Complete archive available at: [https://drive.google.com/drive/folders/1Ba6KrsNfvHEkJf9REvHP4OQro6xuFSt8?usp=drive_link].
-  - Directory structure adheres to standard YOLO format (`images/train`, `images/val`, `labels/train`, `labels/val`).
+---
 
-- [x] Train/validation/test split
-  - Stratified 80/20 train/validation split across 971 total captured images:
-    - **Training set (776 images, 80%):** ~370 straight in-path, ~120 rotated/angled, ~61 distractors/sidewalk, ~225 empty road frames.
-    - **Validation/Evaluation set (195 images, 20%):** ~92 straight in-path, ~32 rotated/angled, ~14 distractors/sidewalk, ~57 empty road frames.
-  - The evaluation set is kept fixed across all model evaluations to ensure fair benchmarking[cite: 3, 20].
+## 6. Dataset
 
-- [x] Ground-truth annotation tool and format
-  - **Tool:** CVAT / LabelImg[cite: 14].
-  - **Format:** Single-class normalized YOLO format: `0 <x_center> <y_center> <width> <height>` (`0 = pedestrian`, normalized [0, 1])[cite: 14].
-  - **Negative frames:** Stored as empty (0-byte) `.txt` files to explicitly train against false positives.
+The evaluation dataset was **created entirely from scratch** inside the Unity Gaussian-splat environment. No pre-existing dataset is used for evaluation. COCO-pretrained weights are used only as initialization for fine-tuning.
 
-- [x] Annotation quality-control procedure
-  - Two-pass visual verification ensuring bounding boxes tightly enclose the pedestrian boundary while excluding ground shadows.
-  - Verification of partial occlusions around poles, benches, and sidewalks.
-  - Automated file check ensuring all 282 negative sample frames contain corresponding blank `.txt` label files.
+**Download.** The full dataset is not stored in Git (images and labels are excluded via `.gitignore`):
+<https://drive.google.com/drive/folders/1Ba6KrsNfvHEkJf9REvHP4OQro6xuFSt8?usp=drive_link> (anyone with the link can view and download).
 
-- [x] Evaluation dataset created from scratch
-  - Recorded 100% from scratch inside the Unity 3D Gaussian Splat environment using `TimeRecorder.cs` at 10 Hz (every 0.1 s)[cite: 3, 12].
-  - Total composition: **971 images**
-    - Direct in-path crossing (straight camera): 462 images (47.6%)
-    - Rotated camera and curved approach angles: 152 images (15.6%)
-    - Distractors (sidewalk, benches, street poles): 75 images (7.7%)
-    - Negative road samples without pedestrians: 282 images (29.1%)
-- [x] Baseline definition.
-  - A single-class pedestrian detector was trained on the fixed YOLO dataset and
-    compared against a standard Faster R-CNN baseline on the same evaluation
-    split.
-- [x] Metrics, including precision, recall, F1, AP50, mAP50-95, and/or
-      inference speed as appropriate.
-  - Final validation metrics for the YOLOv8n augmented training run: **precision
-    = 0.982**, **recall = 0.999**, **mAP50 = 0.994**.
-  - Test-set performance: **mAP50 = 0.992**.
-  - Model comparison summary:
+**Composition (971 images)**
 
-| Model | mAP50 | mAP50-95 | Inference time |
-| --- | ---: | ---: | ---: |
-| YOLOv8n | 0.9918 | 0.8295 | 7.2 ms |
-| Faster R-CNN | 0.9846 | 0.8733 | 171.5 ms |
+| Category | Images | Share | Label |
+| --- | ---: | ---: | --- |
+| Pedestrian crossing, straight camera | 462 | 47.6% | Pedestrian box |
+| Pedestrian, rotated camera / curved approach | 152 | 15.7% | Pedestrian box |
+| Distractors (sidewalk, benches, poles) | 75 | 7.7% | Empty file |
+| Empty road, no pedestrian | 282 | 29.0% | Empty file |
 
-- [x] Model comparison and parameter-space analysis.
-  - The training pipeline uses an augmented YOLOv8n configuration and compares it
-    against a Faster R-CNN detector under the same pedestrian-only task.
-  - The comparison shows the YOLO family offers substantially faster inference
-    while maintaining high detection quality on the collected dataset.
-- [x] Results, plots, and interpretation.
-  - Training and validation artifacts are stored in
-    [`results/ADAS_Project_drive/runs`](./results/ADAS_Project_drive/runs).
-  - The generated plots include precision/recall curves, PR curves, F1 curves,
-    confusion-free validation summaries, and model-comparison charts.
+Background categories are stored as 0-byte label files, which keeps the negative distribution without creating false annotations.
 
-The final evaluation set must remain fixed while comparing methods. Dataset
-instructions must explain how the Unity capture process connects to the
-annotation and training pipeline.
+**Split.** Stratified 80/10/10 train/validation/test split, built by the sorter, identical for every model.
 
-## Dataset curation and training workflow
+| Set | Images | Straight | Rotated | Distractors | Empty road |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Train (80%) | 776 | ~370 | ~120 | ~61 | ~225 |
+| Validation + test (20%) | 195 (≈97 val, ≈98 test) | ~92 | ~32 | ~14 | ~57 |
 
-This section describes the work completed by the author of this contribution: data capture, dataset sorting, augmentation, and training/evaluation preparation.
+The sorter keeps neighboring frames of one capture sequence in the same split to avoid temporal leakage. The validation and test sets are fixed across all models.
 
-- `training data sorter.py` organizes the raw image folders by category prefix
-  (`pedestrian_rotated`, `car_near_sidewalk`, `Distractors`, `pedestrian`,
-  `empty`) and builds a YOLO-ready dataset structure. The script preserves
-  temporal continuity by grouping nearby frames before the split, which reduces
-  leakage between adjacent frames from the same capture sequence.
-- The dataset layout follows the standard YOLO format:
-  `dataset/images/train`, `dataset/images/val`, `dataset/images/test` and the
-  corresponding `dataset/labels/...` folders.
-- Background and distractor frames such as `empty`, `Distractors`, and
-  `car_near_sidewalk` are intentionally stored as empty 0-byte `.txt` files.
-  This keeps the negative-sample distribution explicit without creating an
-  invalid object annotation.
-- `data.yaml` defines the project as a single-class pedestrian detection task.
-- `auto_label_pedestrians.py` was used to generate preliminary YOLO boxes with
-  a pretrained Ultralytics model, followed by manual review to keep only valid
-  pedestrian annotations and preserve the negative samples.
-- `train_and_evaluate.ipynb` contains the project training and comparison workflow:
-  - YOLOv8n model training with augmentation,
-  - evaluation on the fixed split,
-  - Faster R-CNN baseline comparison on the same data split.
+---
 
-The reported comparison values for the project are:
-- YOLOv8n: **mAP50 = 0.9918**, **mAP50-95 = 0.8295**, **inference = 7.2 ms**
-- Faster R-CNN: **mAP50 = 0.9846**, **mAP50-95 = 0.8733**, **inference = 171.5 ms**
+## 7. Ground truth and annotation
 
-This workflow was designed to preserve fairness in evaluation: all training and
-comparison steps use the same dataset partition while the negative and distractor
-samples are retained to stress realistic false-positive behavior in the
-pedestrian detection task.
+The labels were **not drawn manually**. They were generated automatically and then verified.
 
-## Third-party assets, code, and licenses
+- **Auto-labeling:** `auto_label_pedestrians.py` runs a pretrained Ultralytics detector (`yolov8m.pt`) on the pedestrian-category frames and writes preliminary boxes, keeping only the `pedestrian` class.
+- **Format:** single-class normalized YOLO, `0 <x_center> <y_center> <width> <height>` with values in [0, 1] (`0 = pedestrian`).
+- **Negative frames:** empty (0-byte) `.txt` files. Empty-road and distractor categories are never auto-labeled.
+- **Annotator and verifier:** auto-labeling and verification by Mohamed Youssef.
 
-The current Unity project uses the following external components:
+**Verification (two passes)**
 
-- Unity 6000.5.6f1 and Unity packages listed in
-  [`unity/Packages/manifest.json`](./unity/Packages/manifest.json).
-- Unity Gaussian Splatting package:
-  <https://github.com/aras-p/UnityGaussianSplatting>
-- PromptSplat-generated scene assets and the PromptSplat implementation
-  documentation in [`docs/prompt-splat.md`](./docs/prompt-splat.md).
-- Human model and walking animation obtained from
-  [Mixamo](https://www.mixamo.com/).
-- Car model obtained from [Sketchfab](https://sketchfab.com/).
+1. **Label coverage check.** Scripted checks (PowerShell) that every pedestrian image has a populated label file and every negative image has an empty one.
+2. **Visual check.** Review of the generated boxes against the images to keep only valid pedestrian annotations.
 
-**Before public release, the team must verify the redistribution license for
-each downloaded model, texture, animation, and package. The project team has
-confirmed that the listed assets may be redistributed with this project. The
-exact Mixamo and Sketchfab attribution is recorded below:
+Because the ground truth is model-generated, it can be biased toward what a YOLO-family detector finds easy; see [Section 12](#12-known-limitations).
 
-| Asset | Source URL | Creator | License/terms | Redistribution status |
+---
+
+## 8. Evaluation
+
+**Setup.** All models are initialized from COCO-pretrained checkpoints, fine-tuned on the single-class dataset, and evaluated on the same fixed split.
+
+| Model | Type | Initialization | Training data | Role |
 | --- | --- | --- | --- | --- |
-| Human model | [Mixamo free library](https://www.mixamo.com/) | Adobe Mixamo | Mixamo redistribution terms | Confirmed by the project team |
-| Walking animation | [Mixamo free library](https://www.mixamo.com/) | Adobe Mixamo | Mixamo redistribution terms | Confirmed by the project team |
-| Car model | [Car for Games Unity](https://sketchfab.com/3d-models/car-for-games-unity-4d9bbde680fe41349d7ad2b4672a720b) | Creator listed on Sketchfab page | Sketchfab license terms | Confirmed by the project team |
+| YOLOv8n, run 1 | One-stage | `yolov8n.pt` | Unaugmented | Baseline |
+| YOLOv8n, run 2 | One-stage | `yolov8n.pt` | Augmented | Improved configuration |
+| Faster R-CNN, ResNet-50 FPN | Two-stage | `fasterrcnn_resnet50_fpn` (torchvision) | Augmented | Alternative approach |
 
-If an asset license does not permit redistribution, remove the binary from the
-repository and document how evaluators can obtain it legally.
+Faster R-CNN is compared directly against YOLOv8n run 2, since both are trained on augmented data.
 
-## AI and LLM usage
+**Results**
 
-AI/LLM tools used in this project include:
+| Model | mAP50 | mAP50-95 | Inference time (batch size 1) |
+| --- | ---: | ---: | ---: |
+| YOLOv8n, run 1 (unaugmented) | 0.994 (val), 0.992 (test) | not reported | not reported |
+| YOLOv8n, run 2 (augmented) | 0.9918 | 0.8295 | 7.2 ms |
+| Faster R-CNN (augmented) | 0.9846 | 0.8733 | 171.5 ms |
 
-- **PromptSplat**, developed privately with Ahmed Mounir, for local generation
-  of the Gaussian-splat environment assets using project-specific prompts.
-- **Claude**, for assistance with the human and car Unity code.
-- **Copilot**, for repository organization, documentation, and code review
-  assistance.
+| Model | Precision | Recall |
+| --- | ---: | ---: |
+| YOLOv8n, run 2 (augmented) | 0.9788 | 0.9821 |
+| Faster R-CNN (augmented) | ~0.942 | ~0.961 |
 
-All generated assets and code were integrated, tested, and reviewed by the
-project team. The team remains responsible for the final design choices and
-implementation.
+Inference times were measured in `train_and_evaluate.ipynb` at batch size 1. Training of the YOLOv8n runs was done on a Google Colab NVIDIA T4 GPU. The Faster R-CNN precision and recall are approximate values.
 
-Every final design choice must be explainable by the group.
+**Interpretation**
 
-## References and existing implementations
+- All models reach very high mAP50 (~0.98–0.99) on this dataset, and the unaugmented and augmented YOLOv8n runs are essentially tied on mAP50.
+- Faster R-CNN localizes more tightly than the augmented YOLOv8n (mAP50-95 0.8733 vs 0.8295).
+- The augmented YOLOv8n is about 24× faster (7.2 ms vs 171.5 ms), which matters in a real-time safety application.
+- No parameter-space analysis was carried out. The comparison covers two architectures and one augmentation change on YOLOv8n.
+- Training and validation artifacts, including PR and F1 curves and comparison charts, are in [`results/ADAS_Project_drive/runs`](./results/ADAS_Project_drive/runs).
 
-**To be completed by the team:** add papers, surveys, pretrained models,
-repositories, and related Gaussian-splatting or pedestrian-detection
-implementations. For each reused implementation, explain what was reused,
-adapted, or changed.
+---
 
-## My contribution (Umair Zafar)
+## 9. Third-party code, assets and licenses
 
-This section describes only the work completed by the author of this contribution.
+| Component | Source | License / terms | Notes |
+| --- | --- | --- | --- |
+| Unity 6000.5.6f1 and packages | [Unity](https://unity.com/) | Unity terms; see `manifest.json` | |
+| UnityGaussianSplatting | [aras-p/UnityGaussianSplatting](https://github.com/aras-p/UnityGaussianSplatting) | MIT | Gaussian-splat rendering in Unity |
+| Human model and walking animation | [Mixamo](https://www.mixamo.com/) | Adobe Mixamo terms | Redistribution confirmed by the team |
+| Car model "Car for Games Unity" | [Sketchfab](https://sketchfab.com/3d-models/car-for-games-unity-4d9bbde680fe41349d7ad2b4672a720b), artist **Azerilo** | License on the Sketchfab asset page | In `Assets/Azerilo/` |
+| Ultralytics YOLOv8 (incl. `yolov8n.pt`, `yolov8m.pt`) | [ultralytics/ultralytics](https://github.com/ultralytics/ultralytics) | AGPL-3.0 | Auto-labeling, training and inference |
+| PyTorch / Torchvision | [pytorch.org](https://pytorch.org/) | BSD-3-Clause | Faster R-CNN, training |
+| OpenCV | [opencv.org](https://opencv.org/) | Apache-2.0 | Image processing |
 
-- **Asynchronous dataset capture pipeline:** Designed and implemented a custom C# capture workflow (`TimeRecorder.cs`) using `Time.unscaledDeltaTime` and `ScreenCapture` to avoid frame starvation and to maintain continuous 10 Hz capture even while the vehicle was stationary or parked.
-- **Persistent file management and capture organization:** Added runtime timestamping (`run_YYYYMMDD_HHMMSS`) and saved frames outside `Assets/` in the project root to avoid Unity re-import purges and to keep captured runs organized.
-- **AEB scenario and dataset creation:** Built the dataset from scratch inside the 3D Gaussian Splat environment, covering straight crossing, angled/rotated approaches, distractor scenes, and negative samples.
-- **Negative-sample engineering:** Collected empty-road and clutter frames to explicitly penalize false positives and reduce phantom braking behavior.
-- **Dataset splitting and curation:** Developed `training data sorter.py` to group raw images by category prefix, enforce a stratified 80/10/10 split, and create a YOLO-ready folder structure under `dataset/images/{train,val,test}` and `dataset/labels/{train,val,test}`.
-- **Annotation and QC:** Used a single-class YOLO labeling workflow with empty label files for background images, then applied a two-pass visual check to ensure boxes fit the pedestrian silhouette and that negatives remained unlabeled.
-- **Training preparation:** Configured `data.yaml` for single-class pedestrian detection and prepared the training pipeline for YOLO augmentation and evaluation.
-- **YOLO and Faster R-CNN comparison:** Worked in `train_and_evaluate.ipynb` to train the YOLOv8n model and compare it against a Faster R-CNN baseline on the same dataset split.
-- **Benchmark summary:** The project comparison reported in the repository shows **YOLOv8n = mAP50 0.9918, mAP50-95 0.8295, inference 7.2 ms** and **Faster R-CNN = mAP50 0.9846, mAP50-95 0.8733, inference 171.5 ms**.
+---
 
-This contribution focuses on the dataset engineering, annotation, split automation, augmentation preparation, and model-training comparison completed as part of my work.
+## 10. AI and LLM usage
 
-## Known limitations of this stage
+| Tool | Where | For what |
+| --- | --- | --- |
+| **PromptSplat** (private, developed with Ahmed Mounir) | Unity environment | Local generation of the Gaussian-splat scene assets from project-specific prompts |
+| **Claude** | Unity code (human and car scripts) | Code assistance for the pedestrian and car behavior |
+| **Claude and Gemini** | `TimeRecorder.cs` | Implementing the `Time.unscaledDeltaTime` accumulator and external path resolution relative to `Application.dataPath` |
+| **Gemini and GitHub Copilot** | `training data sorter.py`, `auto_label_pedestrians.py` | Sequence-aware prefix grouping to prevent temporal leakage; auto-labeling script |
+| **GitHub Copilot** | Repository | Repository organization, documentation and code review |
+| **Claude** | `README.md` | Restructuring and rewording this document |
 
-- The dataset capture protocol is intentionally left for the dataset
-  contributor.
-- Dataset annotations and detector results are not part of this Unity-only
-  stage.
-- The Gaussian-splat package is retrieved from an external Git repository.
-- Large binary assets require Git LFS or documented external storage.
-- The public redistribution status of third-party models and textures still
-  needs to be verified.
+The `yolov8m.pt` detector used for auto-labeling is a pretrained model, listed in Section 9. All generated assets and code were integrated, tested and reviewed by the team, and the team can explain every design choice.
+
+---
+
+## 11. References and existing implementations
+
+**Papers**
+
+1. B. Kerbl, G. Kopanas, T. Leimkühler, G. Drettakis. *3D Gaussian Splatting for Real-Time Radiance Field Rendering.* ACM Transactions on Graphics, 2023. <https://arxiv.org/abs/2308.04079>
+2. S. Ren, K. He, R. Girshick, J. Sun. *Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks.* NeurIPS 2015. <https://arxiv.org/abs/1506.01497>
+3. G. Jocher, A. Chaurasia, J. Qiu. *Ultralytics YOLOv8.* 2023. <https://github.com/ultralytics/ultralytics>
+4. T.-Y. Lin et al. *Microsoft COCO: Common Objects in Context.* ECCV 2014. <https://arxiv.org/abs/1405.0312>
+
+**Existing implementations and models**
+
+- [aras-p/UnityGaussianSplatting](https://github.com/aras-p/UnityGaussianSplatting)
+- Ultralytics `yolov8n.pt` and `yolov8m.pt` (COCO-pretrained)
+- Torchvision `fasterrcnn_resnet50_fpn` (COCO-pretrained)
+
+**Positioning of this work**
+
+| | |
+| --- | --- |
+| **Reused** | The Unity Gaussian-splat renderer, COCO-pretrained YOLOv8 and Faster R-CNN weights, the Ultralytics and torchvision training APIs, `yolov8m.pt` for auto-labeling. |
+| **Adapted** | Detectors fine-tuned to a single `pedestrian` class; YOLOv8n trained without and with augmentation; Faster R-CNN trained with augmentation. |
+| **Created by the team** | The Unity scene, pedestrian and car behavior, the capture recorder, the full 971-image dataset, the auto-labeling and verification pipeline, the leakage-aware sorter, and the evaluation and comparison. |
+
+---
+
+## 12. Known limitations
+
+- **Labels are model-generated.** Ground truth comes from an auto-labeling pass with a YOLO-family model, followed by verification, not from independent manual annotation. Evaluating YOLO detectors against YOLO-made labels may overstate their accuracy, and may partly explain the near-saturated mAP50 (~0.99).
+- All data is synthetic and comes from a single Unity scene with directional sunlight, so lighting, weather and appearance variety are limited. There is no validation on real-world footage.
+- Single class (`pedestrian`) and a single pedestrian model, so diversity of appearance is low.
+- Frames are sampled at 10 Hz, so frames within a sequence are highly correlated. Grouping them in one split reduces leakage, but the near-saturated scores suggest the task is relatively easy in this setting.
+- The comparison covers two architectures and one augmentation change on YOLOv8n. No parameter-space or ablation study was done, and no traditional (non-deep-learning) method is included.
+- The work covers detection only; no braking logic, tracking or distance estimation is implemented.
+- The Gaussian-splat package is fetched from an external Git repository, and the large splat assets need Git LFS or external storage.
+- PromptSplat is not publicly released, so the splat assets cannot be regenerated from this repository alone.
